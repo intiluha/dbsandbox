@@ -11,26 +11,69 @@ import (
 )
 
 const (
-	username = "root"
-	password = "pass123"
-	hostname = "127.0.0.1:3306"
-	dbname   = "queue"
+	Driver       = "mysql"
+	Username     = "root"
+	Password     = "pass123"
+	Hostname     = "127.0.0.1:3306"
+	DatabaseName = "queue"
+	Table        = "Queue"
+	IdField      = "id"
+	DataField    = "data"
 )
 
-func dsn(dbName string) string {
-	return fmt.Sprintf("%s:%s@tcp(%s)/%s", username, password, hostname, dbName)
+func dsn(db string) string {
+	return fmt.Sprintf("%s:%s@tcp(%s)/%s", Username, Password, Hostname, db)
 }
 
-func createDB(dbName string) error {
+func createTableSQL() string {
+	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s INT PRIMARY KEY AUTO_INCREMENT, %s VARCHAR(255) NOT NULL);", Table, IdField, DataField)
+}
+
+func createDatabaseSQL() string {
+	return fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", DatabaseName)
+}
+
+func createTable() error {
+	db, err := sql.Open(Driver, dsn(DatabaseName))
+	if err != nil {
+		return fmt.Errorf("error [%s] when opening DB\n", err)
+	}
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Printf("error [%s] when closing DB\n", err)
+		}
+	}(db)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+	defer cancel()
+	res, err := db.ExecContext(ctx, createTableSQL())
+	if err != nil {
+		return fmt.Errorf("error [%s] when creating table\n", err)
+	}
+	no, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("error [%s] when fetching rows", err)
+	}
+	log.Printf("rows affected %d\n", no)
+	return nil
+}
+
+func createDB() error {
 	db, err := sql.Open("mysql", dsn(""))
 	if err != nil {
 		return fmt.Errorf("error [%s] when opening DB\n", err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Printf("error [%s] when closing DB\n", err)
+		}
+	}(db)
 
-	ctx, cancelFunc := context.WithTimeout(context.Background(), 5 * time.Second)
-	defer cancelFunc()
-	res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS " + dbName)
+	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+	defer cancel()
+	res, err := db.ExecContext(ctx, createDatabaseSQL())
 	if err != nil {
 		return fmt.Errorf("error [%s] when creating DB\n", err)
 	}
@@ -43,7 +86,7 @@ func createDB(dbName string) error {
 }
 
 func main() {
-	err := createDB(dbname)
+	err := createTable()
 	if err != nil {
 		log.Fatal(err)
 	}
