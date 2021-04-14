@@ -12,55 +12,39 @@ import (
 
 const (
 	username = "root"
-	password = "password"
+	password = "pass123"
 	hostname = "127.0.0.1:3306"
-	dbname   = "ecommerce"
+	dbname   = "queue"
 )
 
 func dsn(dbName string) string {
 	return fmt.Sprintf("%s:%s@tcp(%s)/%s", username, password, hostname, dbName)
 }
 
-func main() {
+func createDB(dbName string) error {
 	db, err := sql.Open("mysql", dsn(""))
 	if err != nil {
-		log.Printf("Error %s when opening DB\n", err)
-		return
+		return fmt.Errorf("error [%s] when opening DB\n", err)
 	}
 	defer db.Close()
 
-	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelfunc()
-	res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS "+dbname)
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 5 * time.Second)
+	defer cancelFunc()
+	res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS " + dbName)
 	if err != nil {
-		log.Printf("Error %s when creating DB\n", err)
-		return
+		return fmt.Errorf("error [%s] when creating DB\n", err)
 	}
 	no, err := res.RowsAffected()
 	if err != nil {
-		log.Printf("Error %s when fetching rows", err)
-		return
+		return fmt.Errorf("error [%s] when fetching rows", err)
 	}
 	log.Printf("rows affected %d\n", no)
+	return nil
+}
 
-	db.Close()
-	db, err = sql.Open("mysql", dsn(dbname))
+func main() {
+	err := createDB(dbname)
 	if err != nil {
-		log.Printf("Error %s when opening DB", err)
-		return
+		log.Fatal(err)
 	}
-	defer db.Close()
-
-	db.SetMaxOpenConns(20)
-	db.SetMaxIdleConns(20)
-	db.SetConnMaxLifetime(time.Minute * 5)
-
-	ctx, cancelfunc = context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelfunc()
-	err = db.PingContext(ctx)
-	if err != nil {
-		log.Printf("Errors %s pinging DB", err)
-		return
-	}
-	log.Printf("Connected to DB %s successfully\n", dbname)
 }
