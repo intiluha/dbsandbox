@@ -4,18 +4,22 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 )
 
 const (
 	Driver       = "mysql"
-	Username     = "root"
-	Password     = "pass123"
 	Hostname     = "127.0.0.1:3306"
 	DatabaseName = "queue"
 	Table        = "Queue"
 	IdField      = "id"
 	DataField    = "data"
-	Order        = "ASC"  // Change to "DESC" for LIFO
+	Order        = "ASC" // Change to "DESC" for LIFO
+)
+
+var (
+	Username = os.Getenv("MYSQL_USER")
+	Password = os.Getenv("MYSQL_PASS")
 )
 
 func dsn(db string) string {
