@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-func process(data string) {
-	fmt.Println(data)
+func process(data string, n int64) {
+	fmt.Println(data, n)
 }
 
 func Reader(n int, errs chan error) {
@@ -55,20 +55,31 @@ func Reader(n int, errs chan error) {
 			time.Sleep(time.Second)
 			i--
 			log.Print("sleep")
+			continue
+		}
+		// Delete row
+		res, err := tx.Exec(deleteSQL(id))
+		if err != nil {
+			errs <- fmt.Errorf("error [%s] when deleting row\n", err)
+			return
+		}
+		nRows, err := res.RowsAffected()
+		if err != nil {
+			errs <- fmt.Errorf("error [%s] when fetching rows\n", err)
+			return
+		}
+		if nRows == 0 {
+			// If row was already deleted by another reader, rollback
+			err = tx.Rollback()
+			i--
 		} else {
-			_, err := tx.Exec(deleteSQL(id))
-			if err != nil {
-				// If row was already deleted, rollback
-				err = tx.Rollback()
-			} else {
-				// If everything is Okay, commit and process
-				err = tx.Commit()
-				process(data)
-			}
-			if err != nil {
-				errs <- fmt.Errorf("error [%s] when comitting/rolling back transaction\n", err)
-				return
-			}
+			// If everything is Okay, commit and process
+			err = tx.Commit()
+			process(data, nRows)
+		}
+		if err != nil {
+			errs <- fmt.Errorf("error [%s] when comitting/rolling back transaction\n", err)
+			return
 		}
 	}
 	errs <- nil

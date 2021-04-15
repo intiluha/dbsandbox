@@ -16,15 +16,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	errs := make(chan error)
 	nWriters, nReaders, nOperations := 2, 2, 100
+	errs := make(chan error, nWriters+nReaders)
 	for i := 0; i < nWriters; i++ {
 		go core.Writer(string(rune('a'+i)), nOperations, errs)
 	}
 	for i := 0; i < nReaders; i++ {
 		go core.Reader(nOperations, errs)
 	}
-	for i := 0; i < nWriters + nReaders; i++ {
-		log.Print(<- errs)
+	for i := 0; i < nWriters+nReaders; i++ {
+		log.Print(<-errs)
 	}
 }
