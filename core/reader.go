@@ -47,7 +47,7 @@ func Reader(n int, errs chan error) {
 		err = tx.QueryRow(queryOneSQL()).Scan(&id, &data)
 		if err != nil {
 			if err != sql.ErrNoRows {
-				errs <- fmt.Errorf("error [%s] when creating table\n", err)
+				errs <- fmt.Errorf("error [%s] when querying row\n", err)
 				return
 			}
 			// If no rows are present, wait
@@ -70,6 +70,7 @@ func Reader(n int, errs chan error) {
 		}
 		if nRows == 0 {
 			// If row was already deleted by another reader, rollback
+			log.Print("rollback")
 			err = tx.Rollback()
 			i--
 		} else {
