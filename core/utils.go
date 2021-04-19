@@ -22,6 +22,15 @@ var (
 	Password = os.Getenv("MYSQL_PASS")
 )
 
+type Row struct {
+	ID   uint
+	Data string
+}
+
+func (Row) TableName() string {
+	return Table
+}
+
 func dsn(db string) string {
 	return fmt.Sprintf("%s:%s@tcp(%s)/%s", Username, Password, Hostname, db)
 }

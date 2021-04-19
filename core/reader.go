@@ -4,12 +4,60 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"log"
 	"time"
 )
 
-func process(data string, n int64) {
-	fmt.Println(data, n)
+func process(data string) {
+	fmt.Println(data)
+}
+
+func interrupt(i *int) {
+	*i--
+	log.Print("interrupted")
+}
+
+func sleep(i *int) {
+	*i--
+	time.Sleep(time.Second)
+	log.Print("sleep")
+}
+
+func ReaderORM(n int, errs chan error) {
+	// Open database
+	db, err := gorm.Open(mysql.Open(dsn(DatabaseName)), &gorm.Config{})
+	if err != nil {
+		errs <- err
+		return
+	}
+
+	row := Row{}
+	for i := 0; i < n; i++ {
+		row = Row{}
+		err = db.First(&row).Error
+		if err == logger.ErrRecordNotFound {
+			sleep(&i)
+			continue
+		}
+		if err != nil {
+			errs <- err
+			return
+		}
+		res := db.Delete(row)
+		if err = res.Error; err != nil {
+			errs <- err
+			return
+		}
+		if res.RowsAffected == 0 {
+			interrupt(&i)
+		} else {
+			process(row.Data)
+		}
+	}
+	errs <- nil
 }
 
 func Reader(n int, errs chan error) {
@@ -52,9 +100,7 @@ func Reader(n int, errs chan error) {
 			}
 			// If no rows are present, wait
 			_ = tx.Commit()
-			time.Sleep(time.Second)
-			i--
-			log.Print("sleep")
+			sleep(&i)
 			continue
 		}
 		// Delete row
@@ -70,13 +116,12 @@ func Reader(n int, errs chan error) {
 		}
 		if nRows == 0 {
 			// If row was already deleted by another reader, rollback
-			log.Print("rollback")
+			interrupt(&i)
 			err = tx.Rollback()
-			i--
 		} else {
 			// If everything is Okay, commit and process
+			process(data)
 			err = tx.Commit()
-			process(data, nRows)
 		}
 		if err != nil {
 			errs <- fmt.Errorf("error [%s] when comitting/rolling back transaction\n", err)
@@ -84,5 +129,4 @@ func Reader(n int, errs chan error) {
 		}
 	}
 	errs <- nil
-	return
 }
