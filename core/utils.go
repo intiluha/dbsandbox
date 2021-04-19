@@ -32,3 +32,9 @@ func databaseCloser(db *sql.DB) {
 		log.Printf("error [%s] when closing DB\n", err)
 	}
 }
+
+func Assert(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}

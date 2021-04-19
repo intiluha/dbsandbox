@@ -8,13 +8,9 @@ import (
 
 func main() {
 	err := core.CreateDatabase()
-	if err != nil {
-		log.Fatal(err)
-	}
+	core.Assert(err)
 	err = core.CreateTable()
-	if err != nil {
-		log.Fatal(err)
-	}
+	core.Assert(err)
 
 	nWriters, nReaders, nOperations := 2, 2, 100
 	errs := make(chan error, nWriters+nReaders)
