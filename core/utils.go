@@ -38,7 +38,7 @@ func dsn(db string) string {
 func databaseCloser(db *sql.DB) {
 	err := db.Close()
 	if err != nil {
-		log.Printf("error [%s] when closing DB\n", err)
+		log.Printf("%s when closing DB\n", err)
 	}
 }
 

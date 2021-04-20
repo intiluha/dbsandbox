@@ -70,42 +70,24 @@ func Reader(n int, wg *sync.WaitGroup) {
 	}
 	defer databaseCloser(db)
 
-	// Create context and establish connection, defer canceling and closing
+	// Create context, defer canceling
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(n)*time.Second)
-	conn, err := db.Conn(ctx)
-	if err != nil {
-		cancel()
-		log.Println(err, "in Reader when establishing connection")
-		return
-	}
-	defer func() {
-		cancel()
-		_ = conn.Close()
-	}()
+	defer cancel()
 
 	var id int
 	var data string
 	for i := 0; i < n; {
-		// Begin transaction TODO: tx not needed
-		tx, err := conn.BeginTx(ctx, &sql.TxOptions{})
-		if err != nil {
-			log.Println(err, "in Reader when beginning transaction")
-			return
-		}
 		// Try to scan first row
-		err = tx.QueryRow(queryOneSQL()).Scan(&id, &data)
-		if err != nil {
-			if err != sql.ErrNoRows {
-				log.Println(err, "in Reader when querying row")
-				return
-			}
-			// If no rows are present, wait
-			_ = tx.Commit()
+		err = db.QueryRowContext(ctx, queryOneSQL()).Scan(&id, &data)
+		if err == sql.ErrNoRows {
 			sleep()
 			continue
+		} else if err != nil {
+			log.Println(err, "in Reader when querying row")
+			return
 		}
 		// Delete row
-		res, err := tx.Exec(deleteSQL(id))
+		res, err := db.ExecContext(ctx, deleteSQL(id))
 		if err != nil {
 			log.Println(err, "in Reader when deleting row")
 			return
@@ -118,16 +100,10 @@ func Reader(n int, wg *sync.WaitGroup) {
 		if nRows == 0 {
 			// If row was already deleted by another reader, rollback
 			interrupt()
-			err = tx.Rollback()
 		} else {
 			// If everything is Okay, commit and process
-			err = tx.Commit()
 			process(data)
 			i++
-		}
-		if err != nil {
-			log.Println(err, "in Reader when committing/rolling back transaction")
-			return
 		}
 	}
 }
