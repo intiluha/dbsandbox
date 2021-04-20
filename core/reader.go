@@ -25,7 +25,7 @@ func sleep() {
 	log.Print("sleep")
 }
 
-func ReaderORM(n int, wg *sync.WaitGroup) {
+func ReaderORM(order orderType, n int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Open database
 	db, err := gorm.Open(mysql.Open(dsn(DatabaseName)), &gorm.Config{})
@@ -37,7 +37,12 @@ func ReaderORM(n int, wg *sync.WaitGroup) {
 	var row Row
 	for i := 0; i < n; {
 		row = Row{}
-		err = db.First(&row).Error
+		if order == AscendingOrder {
+			err = db.First(&row).Error
+		} else {
+			err = db.Last(&row).Error
+		}
+
 		if err == logger.ErrRecordNotFound {
 			sleep()
 			continue
@@ -60,7 +65,7 @@ func ReaderORM(n int, wg *sync.WaitGroup) {
 	}
 }
 
-func Reader(n int, wg *sync.WaitGroup) {
+func Reader(order orderType, n int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Open database, defer closing
 	db, err := sql.Open(Driver, dsn(DatabaseName))
@@ -78,7 +83,7 @@ func Reader(n int, wg *sync.WaitGroup) {
 	var data string
 	for i := 0; i < n; {
 		// Try to scan first row
-		err = db.QueryRowContext(ctx, queryOneSQL()).Scan(&id, &data)
+		err = db.QueryRowContext(ctx, queryOneSQL(order)).Scan(&id, &data)
 		if err == sql.ErrNoRows {
 			sleep()
 			continue

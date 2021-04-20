@@ -7,14 +7,17 @@ import (
 	"os"
 )
 
+type orderType bool
+
 const (
-	Driver       = "mysql"
-	Hostname     = "127.0.0.1:3306"
-	DatabaseName = "queue"
-	Table        = "Queue"
-	IdField      = "id"
-	DataField    = "data"
-	Order        = "ASC" // Change to "DESC" for LIFO
+	Driver          = "mysql"
+	Hostname        = "127.0.0.1:3306"
+	DatabaseName    = "queue"
+	Table           = "Queue"
+	IdField         = "id"
+	DataField       = "data"
+	AscendingOrder  = orderType(false)
+	DescendingOrder = orderType(true)
 )
 
 var (

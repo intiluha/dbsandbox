@@ -14,8 +14,12 @@ func insertSQL(data string) string {
 	return fmt.Sprintf("INSERT INTO %s(%s) VALUES (\"%s\");", Table, DataField, data)
 }
 
-func queryOneSQL() string {
-	return fmt.Sprintf("SELECT * FROM %s ORDER BY %s %s LIMIT 1;", Table, IdField, Order)
+func queryOneSQL(order orderType) string {
+	orderString := "DESC"
+	if order == AscendingOrder {
+		orderString = "ASC"
+	}
+	return fmt.Sprintf("SELECT * FROM %s ORDER BY %s %s LIMIT 1;", Table, IdField, orderString)
 }
 
 func deleteSQL(id int) string {

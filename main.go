@@ -12,14 +12,14 @@ func main() {
 	err = core.CreateTable()
 	core.Assert(err)
 
-	nWriters, nReaders, nOperations := 5, 5, 1000
+	nWriters, nReaders, nOperations := 5, 5, 10
 	wg := new(sync.WaitGroup)
 	wg.Add(nWriters+nReaders)
 	for i := 0; i < nWriters; i++ {
 		go core.Writer(string(rune('a'+i)), nOperations, wg)
 	}
 	for i := 0; i < nReaders; i++ {
-		go core.Reader(nOperations, wg)
+		go core.Reader(core.DescendingOrder, nOperations, wg)
 	}
 	wg.Wait()
 }
