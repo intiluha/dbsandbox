@@ -3,10 +3,11 @@ package core
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"log"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -18,40 +19,40 @@ func generateSequence(prefix string, n int) []string {
 	return slice
 }
 
-func WriterORM(prefix string, n int, errs chan error) {
+func WriterORM(prefix string, n int, wg *sync.WaitGroup) {
+	defer wg.Done()
 	db, err := gorm.Open(mysql.Open(dsn(DatabaseName)), &gorm.Config{})
 	if err != nil {
-		errs <- err
+		log.Println(err, "in WriterORM when opening db")
 		return
 	}
 
 	for _, x := range generateSequence(prefix, n) {
 		err = db.Create(&Row{Data: x}).Error
 		if err != nil {
-			errs <- err
+			log.Println(err, "in WriterORM when inserting element")
 			return
 		}
 	}
-	errs <- nil
 }
 
-func Writer(prefix string, n int, errs chan error) {
+func Writer(prefix string, n int, wg *sync.WaitGroup) {
+	defer wg.Done()
 	// Open database, defer closing
 	db, err := sql.Open(Driver, dsn(DatabaseName))
 	if err != nil {
-		errs <- fmt.Errorf("error [%s] when opening DB\n", err)
+		log.Println(err, "in Writer when opening DB")
 		return
 	}
 	defer databaseCloser(db)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(n)*time.Second)
-	defer cancel()
+	defer cancel() // TODO: what does it mean?
 	for _, x := range generateSequence(prefix, n) {
 		_, err := db.ExecContext(ctx, insertSQL(x))
 		if err != nil {
-			errs <- fmt.Errorf("error [%s] inserting row\n", err)
+			log.Println(err, "in Writer when inserting row")
 			return
 		}
 	}
-	errs <- nil
 }

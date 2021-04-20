@@ -1,7 +1,7 @@
 package core
 
 import "fmt"
-
+// TODO: prepared statements
 func createDatabaseSQL() string {
 	return fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", DatabaseName)
 }
