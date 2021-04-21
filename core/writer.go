@@ -49,7 +49,7 @@ func Writer(prefix string, n int, wg *sync.WaitGroup) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(n)*time.Second)
 	defer cancel()
 	for _, x := range generateSequence(prefix, n) {
-		_, err := db.ExecContext(ctx, insertSQL(x))
+		_, err := db.ExecContext(ctx, insertSQL(), x)
 		if err != nil {
 			log.Println(err, "in Writer when inserting row")
 			return

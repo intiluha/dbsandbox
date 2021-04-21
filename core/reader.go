@@ -92,7 +92,7 @@ func Reader(order orderType, n int, wg *sync.WaitGroup) {
 			return
 		}
 		// Delete row
-		res, err := db.ExecContext(ctx, deleteSQL(id))
+		res, err := db.ExecContext(ctx, deleteSQL(), id)
 		if err != nil {
 			log.Println(err, "in Reader when deleting row")
 			return

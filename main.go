@@ -12,7 +12,7 @@ func main() {
 	err = core.CreateTable()
 	core.Assert(err)
 
-	nWriters, nReaders, nOperations := 5, 5, 10
+	nWriters, nReaders, nOperations := 3, 3, 10
 	wg := new(sync.WaitGroup)
 	wg.Add(nWriters + nReaders)
 	for i := 0; i < nWriters; i++ {
