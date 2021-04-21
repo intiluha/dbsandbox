@@ -14,7 +14,7 @@ func main() {
 
 	nWriters, nReaders, nOperations := 5, 5, 10
 	wg := new(sync.WaitGroup)
-	wg.Add(nWriters+nReaders)
+	wg.Add(nWriters + nReaders)
 	for i := 0; i < nWriters; i++ {
 		go core.Writer(string(rune('a'+i)), nOperations, wg)
 	}

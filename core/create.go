@@ -9,7 +9,7 @@ import (
 
 func CreateDatabase() error {
 	// Open database, defer closing
-	db, err := sql.Open(Driver, dsn(""))
+	db, err := sql.Open(driver, dsn(""))
 	if err != nil {
 		return fmt.Errorf("%s in CreateDatabase when opening DB", err)
 	}
@@ -26,7 +26,7 @@ func CreateDatabase() error {
 
 func CreateTable() error {
 	// Open database, defer closing
-	db, err := sql.Open(Driver, dsn(DatabaseName))
+	db, err := sql.Open(driver, dsn(databaseName))
 	if err != nil {
 		return fmt.Errorf("%s in CreateTable when opening DB", err)
 	}

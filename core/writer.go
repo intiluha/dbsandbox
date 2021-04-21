@@ -21,14 +21,14 @@ func generateSequence(prefix string, n int) []string {
 
 func WriterORM(prefix string, n int, wg *sync.WaitGroup) {
 	defer wg.Done()
-	db, err := gorm.Open(mysql.Open(dsn(DatabaseName)), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(dsn(databaseName)), &gorm.Config{})
 	if err != nil {
 		log.Println(err, "in WriterORM when opening db")
 		return
 	}
 
 	for _, x := range generateSequence(prefix, n) {
-		err = db.Create(&Row{Data: x}).Error
+		err = db.Create(&row{Data: x}).Error
 		if err != nil {
 			log.Println(err, "in WriterORM when inserting element")
 			return
@@ -39,7 +39,7 @@ func WriterORM(prefix string, n int, wg *sync.WaitGroup) {
 func Writer(prefix string, n int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Open database, defer closing
-	db, err := sql.Open(Driver, dsn(DatabaseName))
+	db, err := sql.Open(driver, dsn(databaseName))
 	if err != nil {
 		log.Println(err, "in Writer when opening DB")
 		return
@@ -47,7 +47,7 @@ func Writer(prefix string, n int, wg *sync.WaitGroup) {
 	defer databaseCloser(db)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(n)*time.Second)
-	defer cancel() // TODO: what does it mean?
+	defer cancel()
 	for _, x := range generateSequence(prefix, n) {
 		_, err := db.ExecContext(ctx, insertSQL(x))
 		if err != nil {

@@ -21,26 +21,26 @@ func interrupt() {
 }
 
 func sleep() {
-	time.Sleep(10*time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	log.Print("sleep")
 }
 
 func ReaderORM(order orderType, n int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Open database
-	db, err := gorm.Open(mysql.Open(dsn(DatabaseName)), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(dsn(databaseName)), &gorm.Config{})
 	if err != nil {
 		log.Println(err, "in ReaderORM when opening DB")
 		return
 	}
 
-	var row Row
+	var r row
 	for i := 0; i < n; {
-		row = Row{}
+		r = row{}
 		if order == AscendingOrder {
-			err = db.First(&row).Error
+			err = db.First(&r).Error
 		} else {
-			err = db.Last(&row).Error
+			err = db.Last(&r).Error
 		}
 
 		if err == logger.ErrRecordNotFound {
@@ -51,7 +51,7 @@ func ReaderORM(order orderType, n int, wg *sync.WaitGroup) {
 			log.Println(err, "in ReaderORM querying element")
 			return
 		}
-		res := db.Delete(row)
+		res := db.Delete(r)
 		if err = res.Error; err != nil {
 			log.Println(err, "in ReaderORM when opening DB")
 			return
@@ -59,7 +59,7 @@ func ReaderORM(order orderType, n int, wg *sync.WaitGroup) {
 		if res.RowsAffected == 0 {
 			interrupt()
 		} else {
-			process(row.Data)
+			process(r.Data)
 			i++
 		}
 	}
@@ -68,7 +68,7 @@ func ReaderORM(order orderType, n int, wg *sync.WaitGroup) {
 func Reader(order orderType, n int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Open database, defer closing
-	db, err := sql.Open(Driver, dsn(DatabaseName))
+	db, err := sql.Open(driver, dsn(databaseName))
 	if err != nil {
 		log.Println(err, "in Reader when opening DB")
 		return
